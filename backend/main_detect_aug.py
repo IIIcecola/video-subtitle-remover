@@ -79,6 +79,7 @@ class SubtitleDetect:
         dt_scores_list = dt_scores.tolist() if hasattr(dt_scores, 'tolist') else []
         
         filtered_polys = []
+        elapse = 0.0
         for poly, score in zip(dt_polys_list, dt_scores_list):
             if score >= self.conf_threshold:  
                 filtered_polys.append(poly)
