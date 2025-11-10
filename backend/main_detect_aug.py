@@ -66,12 +66,11 @@ class SubtitleDetect:
             print(f"error: {str(e)}")
 
         img_result = output[0] 
-        res_dict = img_result.get('res', {})
         if not res_dict:
             return [], 0.0
         
-        dt_polys = res_dict.get('dt_polys')
-        dt_scores = res_dict.get('dt_scores')
+        dt_polys = res_dict['dt_polys']
+        dt_scores = res_dict['dt_scores']
         if dt_polys is None or dt_scores is None:
             return [], 0.0
         
@@ -86,11 +85,11 @@ class SubtitleDetect:
             base_name = f"frame_{frame_no}" if frame_no else "result"
             img_path = os.path.join(self.output_dir, f"{base_name}.png")
             json_path = os.path.join(self.output_dir, f"{base_name}.json")
-            
-            if self.save_img:
-                res.save_to_img(save_path=img_path)
-            if self.save_json:
-                res.save_to_json(save_path=json_path)
+            for res in output:
+                if self.save_img:
+                    res.save_to_img(save_path=img_path)
+                if self.save_json:
+                    res.save_to_json(save_path=json_path)
         
         return filtered_polys, elapse
 
