@@ -51,7 +51,7 @@ class SubtitleDetect:
         return TextDetection(
             model_name="PP-OCRv5_server_det", 
             device="gpu" if paddle.is_compiled_with_cuda() else "cpu", 
-            model_dir=config.DET_MODEL_PATH  # 模型路径（可在config中配置v5模型路径）
+            model_dir="models/PP-OCRv5_server_det_infer"  # 模型路径（可在config中配置v5模型路径）
         )
 
     def detect_subtitle(self, img, frame_no=None):
@@ -75,12 +75,9 @@ class SubtitleDetect:
         if dt_polys is None or dt_scores is None:
             return [], 0.0
         
-        dt_polys_list = dt_polys.tolist() if hasattr(dt_polys, 'tolist') else []
-        dt_scores_list = dt_scores.tolist() if hasattr(dt_scores, 'tolist') else []
-        
         filtered_polys = []
         elapse = 0.0
-        for poly, score in zip(dt_polys_list, dt_scores_list):
+        for poly, score in zip(dt_polys, dt_scores):
             if score >= self.conf_threshold:  
                 filtered_polys.append(poly)
         
@@ -134,7 +131,7 @@ class SubtitleDetect:
             # 读取视频帧成功
             current_frame_no += 1
             dt_boxes, elapse = self.detect_subtitle(frame, frame_no=current_frame_no)
-            coordinate_list = self.get_coordinates(dt_boxes.tolist())
+            coordinate_list = self.get_coordinates(dt_boxes)  # dt_boxes已经是列表，删除.tolist()
             if coordinate_list:
                 temp_list = []
                 for coordinate in coordinate_list:
