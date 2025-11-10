@@ -60,17 +60,26 @@ class SubtitleDetect:
         frame_no: 当前帧号（用于保存文件命名）
         """
         # 调用v5模型检测，获取结果
-        output = self.text_detector.predict(img)
-        if not output:
-          return [], 0.0
-        
-        # 提取多边形坐标和置信度
-        dt_polys = output['dt_polys'].tolist()
-        dt_scores = output['dt_scores']
-        elapse = 0.0 
+        try:
+            output = self.text_detector.predict(img)
+        except Exception as e:
+            print(f"error: {str(e)}")
 
+        img_result = output[0] 
+        res_dict = img_result.get('res', {})
+        if not res_dict:
+            return [], 0.0
+        
+        dt_polys = res_dict.get('dt_polys')
+        dt_scores = res_dict.get('dt_scores')
+        if dt_polys is None or dt_scores is None:
+            return [], 0.0
+        
+        dt_polys_list = dt_polys.tolist() if hasattr(dt_polys, 'tolist') else []
+        dt_scores_list = dt_scores.tolist() if hasattr(dt_scores, 'tolist') else []
+        
         filtered_polys = []
-        for poly, score in zip(dt_polys, dt_scores):
+        for poly, score in zip(dt_polys_list, dt_scores_list):
             if score >= self.conf_threshold:  
                 filtered_polys.append(poly)
         
