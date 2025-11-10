@@ -34,7 +34,7 @@ class SubtitleDetect:
 
     def __init__(self, video_path, sub_area=None, save_img=False, save_json=False, conf_threshold=0.5, output_dir="./output"):
         self.video_path = video_path
-        self.sub_area = sub_area
+        self.sub_areas = sub_area if isinstance(sub_area, list) else [sub_area] if sub_area else []
         self.save_img = save_img  
         self.save_json = save_json 
         self.output_dir = output_dir 
@@ -122,6 +122,7 @@ class SubtitleDetect:
         current_frame_no = 0
         subtitle_frame_no_box_dict = {}
         print('[Processing] start finding subtitles...')
+        sub_areas = self.sub_area if isinstance(self.sub_area, list) else [self.sub_area] if self.sub_area else []
         while video_cap.isOpened():
             ret, frame = video_cap.read()
             # 如果读取视频帧失败（视频读到最后一帧）
@@ -135,12 +136,13 @@ class SubtitleDetect:
                 temp_list = []
                 for coordinate in coordinate_list:
                     xmin, xmax, ymin, ymax = coordinate
-                    if self.sub_area is not None:
-                        s_ymin, s_ymax, s_xmin, s_xmax = self.sub_area
-                        if (s_xmin <= xmin and xmax <= s_xmax
-                                and s_ymin <= ymin
-                                and ymax <= s_ymax):
-                            temp_list.append((xmin, xmax, ymin, ymax))
+                    if sub_areas:
+                        for s_ymin, s_ymax, s_xmin, s_xmax in sub_areas:
+                            if (s_xmin <= xmin and xmax <= s_xmax
+                                    and s_ymin <= ymin
+                                    and ymax <= s_ymax):
+                                temp_list.append((xmin, xmax, ymin, ymax))
+                                break  # 匹配到一个区域就加入，跳出循环
                     else:
                         temp_list.append((xmin, xmax, ymin, ymax))
                 if len(temp_list) > 0:
@@ -149,17 +151,6 @@ class SubtitleDetect:
             if sub_remover:
                 sub_remover.progress_total = (100 * float(current_frame_no) / float(frame_count)) // 2
         subtitle_frame_no_box_dict = self.unify_regions(subtitle_frame_no_box_dict)
-        # if config.UNITE_COORDINATES:
-        #     subtitle_frame_no_box_dict = self.get_subtitle_frame_no_box_dict_with_united_coordinates(subtitle_frame_no_box_dict)
-        #     if sub_remover is not None:
-        #         try:
-        #             # 当帧数大于1时，说明并非图片或单帧
-        #             if sub_remover.frame_count > 1:
-        #                 subtitle_frame_no_box_dict = self.filter_mistake_sub_area(subtitle_frame_no_box_dict,
-        #                                                                           sub_remover.fps)
-        #         except Exception:
-        #             pass
-        #     subtitle_frame_no_box_dict = self.prevent_missed_detection(subtitle_frame_no_box_dict)
         print('[Finished] Finished finding subtitles...')
         new_subtitle_frame_no_box_dict = dict()
         for key in subtitle_frame_no_box_dict.keys():
@@ -606,7 +597,7 @@ class SubtitleRemover:
         # 线程锁
         self.lock = threading.RLock()
         # 用户指定的字幕区域位置
-        self.sub_area = sub_area
+        self.sub_areas = sub_area if isinstance(sub_area, list) else [sub_area] if sub_area else []
         # 是否为gui运行，gui运行需要显示预览
         self.gui_mode = gui_mode
         # 判断是否为图片
@@ -629,7 +620,8 @@ class SubtitleRemover:
         self.frame_height = int(self.video_cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         self.frame_width = int(self.video_cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         # 创建字幕检测对象
-        self.sub_detector = SubtitleDetect(self.video_path, self.sub_area)
+        self.sub_detector = SubtitleDetect(self.video_path, self.sub_areas, save_img=False, save_json=False, conf_threshold=0.5, output_dir="./output")
+        # self.sub_detector = SubtitleDetect(self.video_path, self.sub_area)
         # 创建视频临时对象，windows下delete=True会有permission denied的报错
         self.video_temp_file = tempfile.NamedTemporaryFile(suffix='.mp4', delete=False)
         # 创建视频写对象
