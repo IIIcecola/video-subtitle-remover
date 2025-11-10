@@ -65,7 +65,7 @@ class SubtitleDetect:
         except Exception as e:
             print(f"error: {str(e)}")
 
-        img_result = output[0] 
+        res_dict = output[0] 
         if not res_dict:
             return [], 0.0
         
