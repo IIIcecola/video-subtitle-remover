@@ -1,3 +1,6 @@
+**forked update**
+更新了PaddleOCR的版本，目前是v5
+
 简体中文 | [English](README_en.md)
 
 ## 项目简介
